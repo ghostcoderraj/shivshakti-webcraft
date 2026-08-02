@@ -114,7 +114,7 @@ const ProductsPreview = () => {
                 <div className="relative h-64 overflow-hidden">
                   <motion.img
                     src={product.image}
-                    alt={`${product.name} - Plywood machinery by Shiv Shakti Engineering`}
+                    alt={`${product.name} - Plywood machinery by SHIV TECH`}
                     className="w-full h-full object-cover"
                     whileHover={{ scale: 1.1 }}
                     transition={{ duration: 0.6 }}
