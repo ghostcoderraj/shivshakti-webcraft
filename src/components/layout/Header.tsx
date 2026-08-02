@@ -1,4 +1,4 @@
-import shivTechLogo from "@/assets/shivtech-logo.png.asset.json";
+import logo from "@/assets/logo.jpg";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -76,7 +76,7 @@ const Header = () => {
                 whileHover={{ scale: 1.05 }}
                 className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg overflow-hidden"
               >
-                <img src={shivTechLogo.url} alt="SHIV TECH Logo" className="w-full h-full object-contain" />
+                <img src={logo} alt="Shiv Shakti Engineering Logo" className="w-full h-full object-contain bg-white" />
               </motion.div>
               <div>
                 <h1 className="font-heading font-bold text-xs sm:text-lg text-foreground leading-tight group-hover:text-primary transition-colors">

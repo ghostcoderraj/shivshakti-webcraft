@@ -1,4 +1,4 @@
-import shivTechLogo from "@/assets/shivtech-logo.png.asset.json";
+import logo from "@/assets/logo.jpg";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -162,7 +162,7 @@ const Footer = () => {
                     boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
                   }}
                 >
-                  <img src={shivTechLogo.url} alt="SHIV TECH Logo" className="w-full h-full object-contain" />
+                  <img src={logo} alt="Shiv Shakti Engineering Logo" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h3 className="text-white font-heading font-bold text-xl">
@@ -386,7 +386,7 @@ const Footer = () => {
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
                   }}
                 >
-                  <img src={shivTechLogo.url} alt="SHIV TECH Logo" className="w-full h-full object-contain" />
+                  <img src={logo} alt="Shiv Shakti Engineering Logo" className="w-full h-full object-contain bg-white" />
                 </div>
                 <div>
                   <h3 className="text-white font-heading font-bold text-lg">

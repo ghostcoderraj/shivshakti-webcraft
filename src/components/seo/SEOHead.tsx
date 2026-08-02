@@ -39,7 +39,7 @@ const SEOHead = ({
     name: "SHIV TECH",
     alternateName: "SSE India",
     url: baseUrl,
-    logo: `${baseUrl}/__l5e/assets-v1/002ca451-8720-4c68-a24f-34cf0ea766fd/shivtech-logo.png`,
+    logo: `${baseUrl}/logo.jpg`,
     description: "Leading manufacturer of plywood machinery and wood working equipment in India with 23+ years of experience.",
     foundingDate: "2002",
     address: {
