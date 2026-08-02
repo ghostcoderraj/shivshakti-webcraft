@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { getProductBySlug, getProductsByCategory } from "@/data/products";
 
 interface ProductImage {
   url: string;
@@ -31,13 +32,48 @@ interface ProductCategory {
   slug: string;
 }
 
+type DetailProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  product_code: string;
+  short_description: string;
+  long_description: string;
+  images: ProductImage[];
+  key_benefits: string[];
+  applications: string[];
+  specifications: Specification[];
+  category: ProductCategory | null;
+};
+
+const mapLocalProduct = (slug: string): DetailProduct | null => {
+  const local = getProductBySlug(slug);
+  if (!local) return null;
+  return {
+    id: local.id,
+    name: local.name,
+    slug: local.slug,
+    product_code: local.model,
+    short_description: local.shortDescription,
+    long_description: local.longDescription,
+    images: [{ url: local.image, alt: local.name }],
+    key_benefits: local.features,
+    applications: local.applications,
+    specifications: local.specifications,
+    category: {
+      id: local.category,
+      name: local.category,
+      slug: local.category.toLowerCase().replace(/\s+/g, "-"),
+    },
+  };
+};
+
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
 
-  // Fetch product by slug
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", slug],
-    queryFn: async () => {
+    queryFn: async (): Promise<DetailProduct | null> => {
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -55,28 +91,32 @@ const ProductDetail = () => {
         `)
         .eq("slug", slug)
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
-      return {
-        ...data,
-        images: (data.images as unknown as ProductImage[]) || [],
-        key_benefits: (data.key_benefits as unknown as string[]) || [],
-        applications: (data.applications as unknown as string[]) || [],
-        specifications: (data.specifications as unknown as Specification[]) || [],
-        category: data.category as ProductCategory | null,
-      };
+      if (!error && data) {
+        return {
+          ...data,
+          product_code: data.product_code || "",
+          short_description: data.short_description || "",
+          long_description: data.long_description || "",
+          images: (data.images as unknown as ProductImage[]) || [],
+          key_benefits: (data.key_benefits as unknown as string[]) || [],
+          applications: (data.applications as unknown as string[]) || [],
+          specifications: (data.specifications as unknown as Specification[]) || [],
+          category: data.category as ProductCategory | null,
+        };
+      }
+
+      return slug ? mapLocalProduct(slug) : null;
     },
     enabled: !!slug,
   });
 
-  // Fetch related products from same category
   const { data: relatedProducts = [] } = useQuery({
-    queryKey: ["related-products", product?.category?.id],
+    queryKey: ["related-products", product?.category?.id, product?.slug],
     queryFn: async () => {
       if (!product?.category?.id) return [];
-      
+
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -92,18 +132,29 @@ const ProductDetail = () => {
         .neq("id", product.id)
         .limit(3);
 
-      if (error) throw error;
-      
-      return (data || []).map(p => ({
-        ...p,
-        images: (p.images as unknown as ProductImage[]) || [],
-        category: p.category as ProductCategory | null,
-      }));
+      if (!error && data && data.length > 0) {
+        return data.map((p) => ({
+          ...p,
+          images: (p.images as unknown as ProductImage[]) || [],
+          category: p.category as ProductCategory | null,
+        }));
+      }
+
+      return getProductsByCategory(product.category.name)
+        .filter((p) => p.slug !== product.slug)
+        .slice(0, 3)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          product_code: p.model,
+          images: [{ url: p.image, alt: p.name }],
+          category: product.category,
+        }));
     },
     enabled: !!product?.category?.id,
   });
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -112,7 +163,6 @@ const ProductDetail = () => {
     );
   }
 
-  // Redirect to products page if product not found
   if (!product) {
     return <Navigate to="/products" replace />;
   }
@@ -127,7 +177,7 @@ const ProductDetail = () => {
     <HelmetProvider>
       <SEOHead
         title={`${product.name} | ${product.product_code || ""} | Manufacturer India`}
-        description={`${product.short_description || ""}. Buy ${product.name} from Shiv Shakti Engineering, leading plywood machinery manufacturer in Ahmedabad, India.`}
+        description={`${product.short_description || ""}. Buy ${product.name} from SHIV TECH, leading plywood machinery manufacturer in Ahmedabad, India.`}
         keywords={`${product.name.toLowerCase()}, ${product.product_code || ""}, ${categoryName.toLowerCase()}, plywood machinery manufacturer India`}
         canonicalUrl={`/products/${slug}`}
         schemaType="Product"
@@ -135,36 +185,37 @@ const ProductDetail = () => {
           name: product.name,
           description: product.short_description || "",
           image: productImage,
-          brand: "Shiv Shakti Engineering",
+          brand: "SHIV TECH",
         }}
       />
-      
+
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow">
-          {/* Breadcrumb */}
           <section className="bg-secondary py-4">
             <div className="container mx-auto px-4">
               <nav className="text-sm text-muted-foreground">
-                <Link to="/" className="hover:text-primary">Home</Link>
+                <Link to="/" className="hover:text-primary">
+                  Home
+                </Link>
                 <span className="mx-2">/</span>
-                <Link to="/products" className="hover:text-primary">Products</Link>
+                <Link to="/products" className="hover:text-primary">
+                  Products
+                </Link>
                 <span className="mx-2">/</span>
                 <span className="text-foreground">{product.name}</span>
               </nav>
             </div>
           </section>
 
-          {/* Product Header */}
           <section className="py-12 lg:py-16 bg-background">
             <div className="container mx-auto px-4">
               <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-                {/* Image */}
                 <div className="relative">
                   <img
                     src={productImage}
                     alt={`${product.name} - ${product.product_code || ""}`}
-                    className="w-full rounded-xl shadow-lg"
+                    className="w-full rounded-xl shadow-lg bg-secondary/20 object-contain max-h-[520px]"
                   />
                   <span className="absolute top-4 left-4 px-3 py-1 bg-cta text-cta-foreground text-sm font-medium rounded-full">
                     Made in India
@@ -176,7 +227,6 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                {/* Info */}
                 <div>
                   <span className="text-sm text-muted-foreground uppercase tracking-wide">
                     {categoryName}
@@ -188,7 +238,6 @@ const ProductDetail = () => {
                     {product.long_description || product.short_description}
                   </p>
 
-                  {/* Key Features */}
                   {keyBenefits.length > 0 && (
                     <div className="mb-8">
                       <h3 className="font-heading font-semibold text-lg mb-4">Key Features</h3>
@@ -203,7 +252,6 @@ const ProductDetail = () => {
                     </div>
                   )}
 
-                  {/* CTAs */}
                   <div className="flex flex-wrap gap-4">
                     <Link to="/contact">
                       <Button className="cta-button">
@@ -212,13 +260,23 @@ const ProductDetail = () => {
                       </Button>
                     </Link>
                     <a href="tel:+919376102293">
-                      <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                      <Button
+                        variant="outline"
+                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                      >
                         <Phone className="w-5 h-5 mr-2" />
                         Call Now
                       </Button>
                     </a>
-                    <a href="https://wa.me/919376102293" target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="border-success text-success hover:bg-success hover:text-success-foreground">
+                    <a
+                      href="https://wa.me/919376102293"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button
+                        variant="outline"
+                        className="border-success text-success hover:bg-success hover:text-success-foreground"
+                      >
                         WhatsApp
                       </Button>
                     </a>
@@ -228,7 +286,6 @@ const ProductDetail = () => {
             </div>
           </section>
 
-          {/* Specifications */}
           {specifications.length > 0 && (
             <section className="py-12 bg-secondary/30">
               <div className="container mx-auto px-4">
@@ -237,8 +294,13 @@ const ProductDetail = () => {
                   <Table>
                     <TableBody>
                       {specifications.map((spec, index) => (
-                        <TableRow key={index} className={index % 2 === 0 ? "bg-secondary/50" : ""}>
-                          <TableCell className="font-medium text-foreground w-1/3">{spec.label}</TableCell>
+                        <TableRow
+                          key={index}
+                          className={index % 2 === 0 ? "bg-secondary/50" : ""}
+                        >
+                          <TableCell className="font-medium text-foreground w-1/3">
+                            {spec.label}
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{spec.value}</TableCell>
                         </TableRow>
                       ))}
@@ -249,7 +311,6 @@ const ProductDetail = () => {
             </section>
           )}
 
-          {/* Applications */}
           {applications.length > 0 && (
             <section className="py-12 bg-background">
               <div className="container mx-auto px-4">
@@ -266,7 +327,6 @@ const ProductDetail = () => {
             </section>
           )}
 
-          {/* Related Products */}
           {relatedProducts.length > 0 && (
             <section className="py-12 bg-secondary/30">
               <div className="container mx-auto px-4">
@@ -282,13 +342,15 @@ const ProductDetail = () => {
                         <img
                           src={relProduct.images?.[0]?.url || "/placeholder.svg"}
                           alt={relProduct.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
                       </div>
                       <div className="p-4">
                         {relProduct.product_code && (
-                          <span className="text-xs text-primary font-medium">{relProduct.product_code}</span>
+                          <span className="text-xs text-primary font-medium">
+                            {relProduct.product_code}
+                          </span>
                         )}
                         <h3 className="font-heading font-bold text-foreground mt-1 group-hover:text-primary transition-colors line-clamp-2">
                           {relProduct.name}
@@ -301,7 +363,6 @@ const ProductDetail = () => {
             </section>
           )}
 
-          {/* CTA */}
           <section className="py-16 bg-gradient-hero">
             <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl md:text-4xl font-heading font-bold text-primary-foreground mb-4">
@@ -317,8 +378,11 @@ const ProductDetail = () => {
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-                <a href="mailto:shivshaktieng.india2012@gmail.com">
-                  <Button variant="outline" className="bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+                <a href="mailto:shivtechmachinery@gmail.com">
+                  <Button
+                    variant="outline"
+                    className="bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+                  >
                     Email Enquiry
                   </Button>
                 </a>

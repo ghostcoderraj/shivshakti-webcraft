@@ -9,6 +9,10 @@ import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import SEOHead from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  products as localProducts,
+  productCategories as localCategoryNames,
+} from "@/data/products";
 
 interface Product {
   id: string;
@@ -31,11 +35,33 @@ interface Category {
   slug: string;
 }
 
+const localCatalogProducts: Product[] = localProducts.map((p) => ({
+  id: p.id,
+  name: p.name,
+  slug: p.slug,
+  short_description: p.shortDescription,
+  product_code: p.model,
+  images: [{ url: p.image, alt: p.name }],
+  category: {
+    id: p.category,
+    name: p.category,
+    slug: p.category.toLowerCase().replace(/\s+/g, "-"),
+  },
+  key_benefits: p.features.slice(0, 3),
+}));
+
+const localCatalogCategories: Category[] = localCategoryNames
+  .filter((name) => localProducts.some((p) => p.category === name))
+  .map((name) => ({
+    id: name,
+    name,
+    slug: name.toLowerCase().replace(/\s+/g, "-"),
+  }));
+
 const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
-  // Fetch products from database
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  const { data: dbProducts = [], isLoading: productsLoading } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,14 +78,13 @@ const Products = () => {
         `)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
-      
+
       if (error) throw error;
       return data as Product[];
     },
   });
 
-  // Fetch categories from database
-  const { data: categories = [] } = useQuery({
+  const { data: dbCategories = [] } = useQuery({
     queryKey: ["product_categories"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -67,17 +92,21 @@ const Products = () => {
         .select("id, name, slug")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
-      
+
       if (error) throw error;
       return data as Category[];
     },
   });
 
-  // Get categories with product counts
+  const products = dbProducts.length > 0 ? dbProducts : localCatalogProducts;
+  const categories = dbCategories.length > 0 ? dbCategories : localCatalogCategories;
+
   const categoriesWithCounts = useMemo(() => {
     return categories.map((cat) => ({
       ...cat,
-      count: products.filter((p) => p.category?.id === cat.id).length,
+      count: products.filter(
+        (p) => p.category?.id === cat.id || p.category?.name === cat.name
+      ).length,
     }));
   }, [categories, products]);
 
@@ -88,7 +117,6 @@ const Products = () => {
 
   const totalProducts = products.length;
 
-  // Helper to get first image URL
   const getProductImage = (product: Product): string => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
       return product.images[0].url || "/placeholder.svg";
@@ -96,7 +124,6 @@ const Products = () => {
     return "/placeholder.svg";
   };
 
-  // Helper to get features/benefits
   const getProductFeatures = (product: Product): string[] => {
     if (product.key_benefits && Array.isArray(product.key_benefits)) {
       return product.key_benefits.slice(0, 2);
@@ -112,16 +139,17 @@ const Products = () => {
         keywords="plywood machinery products, wood working machines, band saw blade grinder, finger jointing machine, glue spreader, belt sander, wood drying chamber, industrial woodworking machines"
         canonicalUrl="/products"
       />
-      
+
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow">
-          {/* Page Header */}
           <section className="bg-gradient-hero py-16 lg:py-24">
             <div className="container mx-auto px-4">
               <div className="max-w-3xl">
                 <nav className="text-primary-foreground/60 text-sm mb-4">
-                  <Link to="/" className="hover:text-primary-foreground">Home</Link>
+                  <Link to="/" className="hover:text-primary-foreground">
+                    Home
+                  </Link>
                   <span className="mx-2">/</span>
                   <span className="text-primary-foreground">Products</span>
                 </nav>
@@ -129,14 +157,14 @@ const Products = () => {
                   Our Machinery Products
                 </h1>
                 <p className="text-lg text-primary-foreground/80">
-                  Comprehensive range of {totalProducts}+ industrial machinery designed for maximum efficiency, 
-                  durability, and precision in plywood and wood processing operations.
+                  Comprehensive range of {totalProducts}+ industrial machinery designed for
+                  maximum efficiency, durability, and precision in plywood and wood processing
+                  operations.
                 </p>
               </div>
             </div>
           </section>
 
-          {/* Category Filter */}
           <section className="py-6 bg-secondary/50 border-b border-border sticky top-16 z-40">
             <div className="container mx-auto px-4">
               <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -171,7 +199,6 @@ const Products = () => {
             </div>
           </section>
 
-          {/* Products Grid */}
           <section className="py-12 lg:py-16 bg-background">
             <div className="container mx-auto px-4">
               {selectedCategory !== "All" && (
@@ -185,7 +212,7 @@ const Products = () => {
                 </div>
               )}
 
-              {productsLoading ? (
+              {productsLoading && dbProducts.length === 0 && localCatalogProducts.length === 0 ? (
                 <div className="flex items-center justify-center py-20">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   <span className="ml-2 text-muted-foreground">Loading products...</span>
@@ -206,8 +233,8 @@ const Products = () => {
                       <div className="relative h-48 overflow-hidden bg-secondary/30">
                         <img
                           src={getProductImage(product)}
-                          alt={`${product.name} - ${product.product_code || ''}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          alt={`${product.name} - ${product.product_code || ""}`}
+                          className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
                         {product.product_code && (
@@ -224,7 +251,8 @@ const Products = () => {
                           {product.name}
                         </h3>
                         <p className="text-muted-foreground text-sm mb-3 leading-relaxed line-clamp-2">
-                          {product.short_description || "Quality industrial machinery for wood processing."}
+                          {product.short_description ||
+                            "Quality industrial machinery for wood processing."}
                         </p>
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {getProductFeatures(product).map((feature, idx) => (
@@ -248,12 +276,12 @@ const Products = () => {
             </div>
           </section>
 
-          {/* CTA */}
           <section className="py-16 bg-secondary/50">
             <div className="container mx-auto px-4 text-center">
               <h2 className="section-title mb-4">Need Custom Machinery?</h2>
               <p className="section-subtitle mx-auto mb-8">
-                We can design and manufacture custom machinery solutions for your specific requirements.
+                We can design and manufacture custom machinery solutions for your specific
+                requirements.
               </p>
               <Link to="/contact">
                 <Button className="cta-button">
