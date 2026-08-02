@@ -1,4 +1,4 @@
-import logo from "@/assets/logo.jpg";
+import logo from "@/assets/shivtech-logo.jpg";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,16 +73,11 @@ const Header = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <motion.div 
-                whileHover={{ scale: 1.05 }}
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg overflow-hidden"
+                whileHover={{ scale: 1.03 }}
+                className="h-12 sm:h-14 rounded-xl flex items-center justify-center overflow-hidden bg-white px-1.5"
               >
-                <img src={logo} alt="Shiv Shakti Engineering Logo" className="w-full h-full object-contain bg-white" />
+                <img src={logo} alt="SHIV TECH Logo" className="h-full w-auto object-contain" />
               </motion.div>
-              <div>
-                <h1 className="font-heading font-bold text-xs sm:text-lg text-foreground leading-tight group-hover:text-primary transition-colors">
-                  SHIV TECH
-                </h1>
-              </div>
             </Link>
 
             {/* Desktop Nav */}

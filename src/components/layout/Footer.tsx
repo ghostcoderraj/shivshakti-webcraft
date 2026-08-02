@@ -1,4 +1,4 @@
-import logo from "@/assets/logo.jpg";
+import logo from "@/assets/shivtech-logo.jpg";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -157,12 +157,12 @@ const Footer = () => {
                 className="flex items-center gap-4 mb-6"
               >
                 <div 
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center border border-white/10 overflow-hidden bg-white"
+                  className="h-16 rounded-2xl flex items-center justify-center border border-white/10 overflow-hidden bg-white px-2"
                   style={{
                     boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
                   }}
                 >
-                  <img src={logo} alt="Shiv Shakti Engineering Logo" className="w-full h-full object-contain" />
+                  <img src={logo} alt="SHIV TECH Logo" className="h-full w-auto object-contain" />
                 </div>
                 <div>
                   <h3 className="text-white font-heading font-bold text-xl">
@@ -381,12 +381,12 @@ const Footer = () => {
             <div className="mb-8 pb-8 border-b border-white/10">
               <div className="flex items-center gap-4 mb-4">
                 <div 
-                  className="w-14 h-14 rounded-xl flex items-center justify-center border border-white/10 overflow-hidden"
+                  className="h-14 rounded-xl flex items-center justify-center border border-white/10 overflow-hidden bg-white px-2"
                   style={{
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
                   }}
                 >
-                  <img src={logo} alt="Shiv Shakti Engineering Logo" className="w-full h-full object-contain bg-white" />
+                  <img src={logo} alt="SHIV TECH Logo" className="h-full w-auto object-contain bg-white" />
                 </div>
                 <div>
                   <h3 className="text-white font-heading font-bold text-lg">
